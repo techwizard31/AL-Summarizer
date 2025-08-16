@@ -13,14 +13,7 @@ export default function FileUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (selectedFile: File) => {
-    if (
-      selectedFile.type !== "text/plain" &&
-      !selectedFile.name.endsWith(".txt")
-    ) {
-      alert("Please upload a text file (.txt)");
-      return;
-    }
-
+    // if (!selectedFile) return;
     if (selectedFile.size > 10 * 1024 * 1024) {
       // 10MB limit
       alert("File size must be less than 10MB");
