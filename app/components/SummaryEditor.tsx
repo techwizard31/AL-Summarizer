@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { Copy, Check, Eye, Pencil } from "lucide-react";
 import type { SummaryEditorProps } from "../types";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function SummaryEditor({
   summary,
@@ -13,82 +15,10 @@ export default function SummaryEditor({
   const [preview, setPreview] = useState(false);
 
   const handleCopy = async () => {
+    if (!summary) return;
     await navigator.clipboard.writeText(summary);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const formatSummary = (text: string) => {
-    const lines = text.split("\n");
-    let html = "";
-    let inUl = false;
-    let inOl = false;
-
-    for (let line of lines) {
-      if (line.startsWith("- ") || line.startsWith("* ")) {
-        if (!inUl) {
-          html += '<ul class="list-disc ml-6 text-gray-300">';
-          inUl = true;
-        }
-        html += `<li>${line.slice(2)}</li>`;
-        continue;
-      } else if (/^\d+\.\s/.test(line)) {
-        if (!inOl) {
-          html += '<ol class="list-decimal ml-6 text-gray-300">';
-          inOl = true;
-        }
-        html += `<li>${line.replace(/^\d+\.\s/, "")}</li>`;
-        continue;
-      } else {
-        if (inUl) {
-          html += "</ul>";
-          inUl = false;
-        }
-        if (inOl) {
-          html += "</ol>";
-          inOl = false;
-        }
-      }
-
-      // Headings
-      if (line.startsWith("### ")) {
-        html += `<h3 class="text-lg font-bold text-purple-300 mt-4 mb-2">${line.slice(
-          4
-        )}</h3>`;
-        continue;
-      }
-      if (line.startsWith("## ")) {
-        html += `<h2 class="text-xl font-bold text-purple-400 mt-4 mb-2">${line.slice(
-          3
-        )}</h2>`;
-        continue;
-      }
-      if (line.startsWith("# ")) {
-        html += `<h1 class="text-2xl font-bold text-purple-500 mt-4 mb-2">${line.slice(
-          2
-        )}</h1>`;
-        continue;
-      }
-
-      // Bold + italic
-      line = line.replace(
-        /\*\*(.*?)\*\*/g,
-        '<strong class="text-purple-300">$1</strong>'
-      );
-      line = line.replace(
-        /\*(.*?)\*/g,
-        '<em class="italic text-purple-200">$1</em>'
-      );
-
-      if (line.trim()) {
-        html += `<p class="text-gray-300 mb-2">${line}</p>`;
-      }
-    }
-
-    if (inUl) html += "</ul>";
-    if (inOl) html += "</ol>";
-
-    return html;
   };
 
   if (isLoading) {
@@ -122,11 +52,13 @@ export default function SummaryEditor({
 
   return (
     <div className="w-full">
+      {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <label className="text-sm font-medium text-purple-300">
           Generated Summary {preview ? "(Preview)" : "(Editable)"}
         </label>
         <div className="flex items-center space-x-2">
+          {/* Preview/Edit toggle */}
           <button
             onClick={() => setPreview(!preview)}
             className="flex items-center space-x-2 px-3 py-1 rounded-lg hover:bg-purple-900/30 transition-colors"
@@ -144,6 +76,7 @@ export default function SummaryEditor({
             )}
           </button>
 
+          {/* Copy button */}
           <button
             onClick={handleCopy}
             className="flex items-center space-x-2 px-3 py-1 rounded-lg hover:bg-purple-900/30 transition-colors"
@@ -163,12 +96,36 @@ export default function SummaryEditor({
         </div>
       </div>
 
+      {/* Content */}
       <div className="relative">
         {preview ? (
-          <div
-            className="glass-effect rounded-lg p-4 min-h-[300px] max-h-[500px] overflow-y-auto prose prose-invert"
-            dangerouslySetInnerHTML={{ __html: formatSummary(summary) }}
-          />
+          <div className="glass-effect rounded-lg p-6 min-h-[300px] max-h-[500px] overflow-y-auto prose prose-invert">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                strong: ({ node, ...props }) => (
+                  <strong
+                    {...props}
+                    className="text-purple-500 font-semibold"
+                  />
+                ),
+                h1: ({ node, ...props }) => (
+                  <h1 {...props} className="text-2xl font-bold text-purple-400 mb-3" />
+                ),
+                h2: ({ node, ...props }) => (
+                  <h2 {...props} className="text-xl font-semibold text-purple-300 mb-2" />
+                ),
+                li: ({ node, ...props }) => (
+                  <li {...props} className="mb-1 leading-relaxed" />
+                ),
+                p: ({ node, ...props }) => (
+                  <p {...props} className="leading-relaxed text-gray-300 mb-2" />
+                ),
+              }}
+            >
+              {summary}
+            </ReactMarkdown>
+          </div>
         ) : (
           <textarea
             value={summary}
