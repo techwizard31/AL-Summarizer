@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { marked } from 'marked'
 
 if (!process.env.RESEND_API_KEY) {
   throw new Error('Missing RESEND_API_KEY environment variable')
@@ -12,6 +13,9 @@ export async function sendEmail(
   subject: string = 'Meeting Summary'
 ) {
   try {
+    // Convert Markdown (with bold, italic, lists, etc.) → HTML
+    const summaryHtml = marked.parse(summary)
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -21,18 +25,17 @@ export async function sendEmail(
             body {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
               line-height: 1.6;
-              color: #1f2937; /* gray-800 */
+              color: #1f2937;
               max-width: 650px;
               margin: 0 auto;
-              padding: 0;
-              background: #f3f4f6; /* gray-100 */
+              background: #f3f4f6;
             }
             .container {
               background: #ffffff;
               border-radius: 12px;
-              overflow: hidden;
               box-shadow: 0 4px 12px rgba(0,0,0,0.08);
               margin: 30px auto;
+              overflow: hidden;
             }
             .header {
               background: linear-gradient(135deg, #6b21a8 0%, #9333ea 100%);
@@ -44,11 +47,6 @@ export async function sendEmail(
               margin: 0;
               font-size: 26px;
               font-weight: 600;
-            }
-            .header p {
-              margin: 8px 0 0 0;
-              opacity: 0.85;
-              font-size: 14px;
             }
             .content {
               padding: 28px 32px;
@@ -66,10 +64,14 @@ export async function sendEmail(
               border-radius: 6px;
               font-size: 15px;
               line-height: 1.6;
-              white-space: pre-line;
             }
             .summary strong {
-              color: #6b21a8; /* purple-700 */
+              font-weight: bold;
+              color: #6b21a8;
+            }
+            .summary em {
+              font-style: italic;
+              color: #9333ea;
             }
             ul, ol {
               margin: 10px 0 10px 20px;
@@ -80,7 +82,7 @@ export async function sendEmail(
             .footer {
               text-align: center;
               padding: 20px;
-              color: #6b7280; /* gray-500 */
+              color: #6b7280;
               font-size: 12px;
               border-top: 1px solid #e5e7eb;
               background: #fafafa;
@@ -96,7 +98,7 @@ export async function sendEmail(
             <div class="content">
               <h2>Summary Details</h2>
               <div class="summary">
-                ${summary.replace(/\n/g, "<br>")}
+                ${summaryHtml}
               </div>
             </div>
             <div class="footer">
@@ -111,9 +113,9 @@ export async function sendEmail(
     const data = await resend.emails.send({
       from: 'Meetsummary@sheig.shop',
       to: recipients,
-      subject: subject,
+      subject,
       html: htmlContent,
-      text: summary,
+      text: summary, // keep plain text as fallback
     })
 
     return { success: true, data }
