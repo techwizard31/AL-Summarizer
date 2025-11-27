@@ -111,7 +111,7 @@ export async function sendEmail(
     `
 
     const data = await resend.emails.send({
-      from: 'Meetsummary@sheig.shop',
+      from: 'Meetsummary@meddical.shop',
       to: recipients,
       subject,
       html: htmlContent,

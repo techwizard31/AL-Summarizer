@@ -26,16 +26,16 @@ export async function POST(request: NextRequest) {
 
     // Generate summary with enhanced context
     const enhancedPrompt = `
-      Based on the following relevant sections and full context, ${prompt}
+      Based on the following relevant sections, ${prompt}
       
       RELEVANT SECTIONS (Most important for your task):
       ${relevantContext}
       
-      FULL TRANSCRIPT (For additional context if needed):
-      ${fullTranscript}
-    `
+      `
+      // FULL TRANSCRIPT (For additional context if needed):
+      // ${fullTranscript}
 
-    const summary = await generateSummary(fullTranscript, prompt)
+    const summary = await generateSummary(fullTranscript, enhancedPrompt)
 
     const response: SummaryResponse = {
       summary,
